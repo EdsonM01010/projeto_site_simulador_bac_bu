@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>bac-bu_treino</title>
+  <style>
+    :root{
+      --bg:#f4f6f8;
+      --card:#ffffff;
+      --accent:#10b981;
+      --muted:#6b7280;
+      --coin:#fde68a;
+      --coin-border:#f59e0b;
+      --danger:#ef4444;
+    }
+    *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;min-height:100vh;background:var(--bg);color:#0f172a;display:flex;align-items:center;justify-content:center;padding:28px}
+    .card{width:100%;max-width:920px;background:var(--card);border-radius:12px;padding:22px;box-shadow:0 8px 30px rgba(15,23,42,0.06)}
+    h1{margin:0 0 6px;font-size:22px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+    input[type="number"]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;background:white;color:#0f172a}
+    .btn{cursor:pointer;border:0;padding:10px 14px;border-radius:10px;background:linear-gradient(180deg,var(--accent),#059669);color:white;font-weight:700}
+    .btn.secondary{background:transparent;border:1px solid #e6e9ee;color:#0f172a}
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
+    .status{margin-top:18px;padding:14px;border-radius:10px;background:#fbfdff;border:1px solid #eef2f7}
+    .muted{color:var(--muted);font-size:13px}
+
+    /* coins */
+    .coins{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+    .coin{width:76px;height:76px;border-radius:50%;background:linear-gradient(180deg,var(--coin),#fbd46a);border:4px solid var(--coin-border);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#7a4108;box-shadow:0 6px 18px rgba(15,23,42,0.08);cursor:pointer;user-select:none}
+    .coin.small{width:64px;height:64px;font-size:14px}
+    .coin.selected{outline:6px solid rgba(16,185,129,0.18);transform:translateY(-4px)}
+    .coin .val{line-height:1}
+    .coin .count{font-size:12px;color:#4b5563;margin-top:6px}
+
+    .log{margin-top:12px;color:#0f172a;font-size:14px}
+    .alert{margin-top:12px;padding:10px;border-radius:8px;background:#fff7ed;border:1px solid #ffedd5;color:#92400e}
+
+    footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
+
+    @media(max-width:720px){.row{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>Banca Fake — Simulador</h1>
+    <p class="lead">criado por 📷@edson_mmds para treinar jogadas do bac-bu — clique nas moedas para montar sua aposta (cliques acumulam). </p>
+
+    <div class="row">
+      <div class="col">
+        <label for="banca">Valor inicial da banca (R$)</label>
+        <input id="banca" type="number" min="0" step="1" value="100" />
+      </div>
+      <div style="display:flex;gap:8px;align-items:end;">
+        <button id="setBanca" class="btn">Definir banca</button>
+        <button id="clearBanca" class="btn secondary">Limpar</button>
+      </div>
+    </div>
+
+    <div class="status">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <div>
+          <div class="muted">Sua banca atual</div>
+          <div id="displayBanca" style="font-size:22px;font-weight:800">R$ 0</div>
+        </div>
+        <div style="text-align:right">
+          <div class="muted">Aposta atual</div>
+          <div id="displayFicha" style="font-weight:800">-</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <label class="muted">Escolha a moeda (cliques acumulam)</label>
+        <div class="coins" id="coins">
+          <div class="coin" data-value="5"><div class="val">5</div><div class="count" data-count>0x</div></div>
+          <div class="coin" data-value="10"><div class="val">10</div><div class="count" data-count>0x</div></div>
+          <div class="coin" data-value="25"><div class="val">25</div><div class="count" data-count>0x</div></div>
+          <div class="coin" data-value="100"><div class="val">100</div><div class="count" data-count>0x</div></div>
+          <div class="coin" data-value="500"><div class="val">500</div><div class="count" data-count>0x</div></div>
+          <div class="coin" data-value="1000"><div class="val">1000</div><div class="count" data-count>0x</div></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div style="display:flex;gap:8px">
+          <button id="winBtn" class="btn">Venceu (Sim)</button>
+          <button id="loseBtn" class="btn" style="background:linear-gradient(180deg,var(--danger),#dc2626);">Perdeu (Não)</button>
+        </div>
+
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button id="playAgain" class="btn secondary">Jogar de novo</button>
+          <button id="reset" class="btn secondary">Sair</button>
+        </div>
+      </div>
+
+      <div id="log" class="log"></div>
+      <div id="zerada" class="alert" style="display:none">Adicione uma nova banca para continuar</div>
+    </div>
+
+    <footer>Observação: Este algoritmo foi criado 100% em Lua por <strong>Edson</strong>. O ChatGPT contribuiu apenas na interface gráfica para que fique mais fácil o uso <p> <p> 
+COMO USAR <p> <p>
+ “Abra o Bac-Bu em qualquer casa de apostas e acompanhe os resultados, fazendo as apostas usando este algoritmo em vez do seu dinheiro real.”</footer>
+  </div>
+
+<script>
+(function(){
+  // estado
+  let banca = 0;
+  let currentCoin = null; // valor da moeda selecionada (ex: 5)
+  let clickCount = 0;     // quantas vezes clicou na mesma moeda
+  let entrada = 0;        // aposta atual (clickCount * currentCoin)
+
+  // elementos
+  const bancaInput = document.getElementById('banca');
+  const setBancaBtn = document.getElementById('setBanca');
+  const clearBancaBtn = document.getElementById('clearBanca');
+  const displayBanca = document.getElementById('displayBanca');
+  const coinsDiv = document.getElementById('coins');
+  const displayFicha = document.getElementById('displayFicha');
+  const winBtn = document.getElementById('winBtn');
+  const loseBtn = document.getElementById('loseBtn');
+  const playAgain = document.getElementById('playAgain');
+  const resetBtn = document.getElementById('reset');
+  const log = document.getElementById('log');
+  const zerada = document.getElementById('zerada');
+
+  // inicializa
+  function init(){
+    const saved = localStorage.getItem('banca_fake');
+    banca = saved !== null ? Number(saved) : 0;
+    bancaInput.value = banca;
+    updateDisplay();
+    resetSelection();
+  }
+
+  function updateDisplay(){
+    displayBanca.textContent = 'R$ ' + Number(banca).toLocaleString('pt-BR');
+    displayFicha.textContent = entrada === 0 ? '-' : 'R$ ' + entrada.toLocaleString('pt-BR');
+    localStorage.setItem('banca_fake', String(banca));
+    // mostra aviso se zerada
+    if(banca <= 0){
+      zerada.style.display = 'block';
+    } else {
+      zerada.style.display = 'none';
+    }
+  }
+
+  function resetSelection(){
+    currentCoin = null; clickCount = 0; entrada = 0;
+    // reset UI counts
+    coinsDiv.querySelectorAll('.coin').forEach(c=>{
+      c.classList.remove('selected');
+      c.querySelector('[data-count]').textContent = '0x';
+    });
+    log.textContent = 'Escolha uma moeda para começar.';
+    updateDisplay();
+  }
+
+  // eventos
+  setBancaBtn.addEventListener('click', ()=>{
+    const v = Number(bancaInput.value);
+    if(Number.isNaN(v) || v < 0){ alert('Digite um valor válido para a banca.'); return; }
+    banca = Math.floor(v);
+    localStorage.setItem('banca_fake', String(banca));
+    log.textContent = 'Banca definida para R$ ' + banca;
+    updateDisplay();
+  });
+
+  clearBancaBtn.addEventListener('click', ()=>{
+    if(confirm('Deseja realmente limpar a banca e reiniciar?')){
+      banca = 0; localStorage.removeItem('banca_fake'); bancaInput.value = 0; updateDisplay(); resetSelection();
+    }
+  });
+
+  // clique nas moedas: acumula quando clicando na mesma moeda; seleciona nova moeda reiniciando a contagem
+  coinsDiv.addEventListener('click', (e)=>{
+    const coin = e.target.closest('.coin');
+    if(!coin) return;
+    const val = Number(coin.dataset.value);
+    if(currentCoin === val){
+      clickCount += 1;
+    } else {
+      // troca de moeda
+      coinsDiv.querySelectorAll('.coin').forEach(c=>c.classList.remove('selected'));
+      coin.classList.add('selected');
+      currentCoin = val;
+      clickCount = 1;
+      // reset counts visually for other coins
+      coinsDiv.querySelectorAll('.coin').forEach(c=>{
+        if(Number(c.dataset.value) !== val) c.querySelector('[data-count]').textContent = '0x';
+      });
+    }
+    // atualiza contador visual para a moeda clicada
+    coin.querySelector('[data-count]').textContent = clickCount + 'x';
+    // atualiza entrada
+    entrada = currentCoin * clickCount;
+    log.textContent = 'Aposta atual: ' + clickCount + ' x R$ ' + currentCoin + ' = R$ ' + entrada;
+    updateDisplay();
+  });
+
+  function aplicarResultado(venceu){
+    if(entrada === 0 || currentCoin === null){ alert('Selecione uma moeda e clique nela pelo menos uma vez para definir a aposta.'); return; }
+    // lógica do novo script: entrada * 1
+    if(venceu){
+      banca = banca + (entrada * 1);
+      log.textContent = 'Você venceu — banca aumentada em R$ ' + entrada + '.';
+    } else {
+      banca = banca - (entrada * 1);
+      log.textContent = 'Você perdeu — banca reduzida em R$ ' + entrada + '.';
+    }
+    if(banca <= 0){
+      banca = 0;
+      // mostrar mensagem de instrução
+      setTimeout(()=>{
+        alert('Adicione uma nova banca para continuar');
+      }, 10);
+      zerada.style.display = 'block';
+    }
+    // após aplicar resultado, mantém seleção mas zera a aposta (como no script original, pode jogar de novo)
+    localStorage.setItem('banca_fake', String(banca));
+    resetSelection();
+    updateDisplay();
+  }
+
+  winBtn.addEventListener('click', ()=> aplicarResultado(true));
+  loseBtn.addEventListener('click', ()=> aplicarResultado(false));
+
+  playAgain.addEventListener('click', ()=>{
+    resetSelection();
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    if(confirm('Deseja realmente sair e limpar a banca?')){
+      localStorage.removeItem('bac-bu_treinamento'); banca = 0; bancaInput.value = 0; resetSelection(); updateDisplay(); log.textContent = 'Sessão encerrada.';
+    }
+  });
+
+  // inicializa
+  init();
+})();
+</script>
+</body>
+</html>
